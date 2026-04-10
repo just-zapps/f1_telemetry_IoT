@@ -22,16 +22,16 @@ La parte relativa alle dashboard Grafana è in fase di reintegrazione.
 
 Architettura della pipeline:
 
-Producer (Python)
-        ↓ MQTT
-Mosquitto (Broker)
-        ↓
-Telegraf
-        ↓
-InfluxDB
+    Producer (Python)
+            ↓ MQTT
+    Mosquitto (Broker)
+            ↓       ↘
+    Telegraf        Track Web Client (real-time map via WebSocket)
+            ↓
+    InfluxDB
 
-        ↘
-         Track Web Client (real-time map via WebSocket)
+            
+             
 
 ---
 
