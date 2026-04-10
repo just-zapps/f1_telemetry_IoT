@@ -6,7 +6,8 @@ datasources:
     access: proxy
     url: http://influxdb:8086
     isDefault: true
-    user: admin
+    editable: true
+    user: ${INFLUXDB_ADMIN_USER}
     jsonData:
       dbName: f1
       httpMode: POST

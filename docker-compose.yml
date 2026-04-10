@@ -48,8 +48,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana  
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro,Z
     restart: unless-stopped
 
   producer:
@@ -65,7 +65,7 @@ services:
       SESSION_KEY: ${SESSION_KEY}
       DRIVER_NUMBERS: "16,55"
     volumes:
-      - ./producer/cache:/app/cache
+      - ./producer/cache:/app/cache:Z
     restart: "no"
 
 volumes:
