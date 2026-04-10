@@ -1,4 +1,4 @@
-#F1 Telemetry - IoT project
+F1 Telemetry - IoT project
 
 ---
 
