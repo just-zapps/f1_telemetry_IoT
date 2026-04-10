@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>F1 Track Map (MQTT)</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    html, body { margin: 0; padding: 0; background: #0b0b0b; height: 100%; }
+    .wrap { display: grid; place-items: center; height: 100%; }
+    canvas { border: 1px solid #222; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="track" width="800" height="600"></canvas>
+  </div>
+
+<script>
+  const MQTT_WS_URL = "ws://localhost:9001";
+  const TOPIC = "f1/#";              
+  const MAX_TRAIL_POINTS = 300;
+
+  const AFFINE = {
+    a: 0.001477614875883177,
+    b: -0.03644934667786055,
+    c: -0.04612972116713418,
+    d: -0.0000017677987930383998,
+    tx: 580.3190560145999,
+    ty: 523.0641044394741,
+  };
+
+
+  const canvas = document.getElementById("track");
+  const ctx = canvas.getContext("2d");
+
+  const trackImg = new Image();
+  trackImg.src = "monza.png";
+  let trackImgReady = false;
+  trackImg.onload = () => { trackImgReady = true; console.log("track image loaded"); render(); };
+  trackImg.onerror = (e) => console.log("track image load error", e);
+
+  function applyAffine(x, y) {
+    return {
+      u: AFFINE.a * x + AFFINE.b * y + AFFINE.tx,
+      v: AFFINE.c * x + AFFINE.d * y + AFFINE.ty,
+    };
+  }
+
+  function getDriverFromTopic(topic) {
+    const parts = topic.split("/");
+    if (parts.length < 2) return null;
+    return parts[parts.length - 2];
+  }
+
+  
+  const cars = new Map();
+  let lastMsgAt = 0;
+
+  function render() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    if (trackImgReady) ctx.drawImage(trackImg, 0, 0, W, H);
+    else { ctx.fillStyle="#111"; ctx.fillRect(0,0,W,H); }
+
+    for (const [driver, st] of cars.entries()) {
+      if (!st || typeof st.x !== "number" || typeof st.y !== "number") continue;
+
+      const color = (driver === "16") ? "#00d5ff"
+                  : (driver === "55") ? "#7cff6b"
+                  : "#ff7a00";
+
+      if (st.trail && st.trail.length > 1) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        for (let i = 0; i < st.trail.length; i++) {
+          const p = applyAffine(st.trail[i].x, st.trail[i].y);
+          if (i === 0) ctx.moveTo(p.u, p.v);
+          else ctx.lineTo(p.u, p.v);
+        }
+        ctx.stroke();
+      }
+
+      const p = applyAffine(st.x, st.y);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(p.u, p.v, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#fff";
+      ctx.font = "16px sans-serif";
+      ctx.fillText(driver, p.u + 8, p.v - 8);
+    }
+  }
+
+  let renderScheduled = false;
+  function requestRender() {
+    if (renderScheduled) return;
+    renderScheduled = true;
+    requestAnimationFrame(() => {
+      renderScheduled = false;
+      render();
+    });
+  }
+
+  const client = mqtt.connect(MQTT_WS_URL);
+
+  client.on("connect", () => {
+    console.log("MQTT connected");
+    client.subscribe(TOPIC, (err) => console.log("subscribed:", err || "ok"));
+  });
+
+  client.on("error", (e) => console.log("MQTT error", e));
+
+  client.on("message", (topic, msg) => {
+    if (!topic.endsWith("/location")) return;
+
+    let data;
+    try { data = JSON.parse(msg.toString()); }
+    catch { return; }
+
+    if (typeof data.x !== "number" || typeof data.y !== "number") return;
+
+    const driver = getDriverFromTopic(topic);
+    if (!driver) return;
+
+    const st = cars.get(driver) ?? { x: data.x, y: data.y, trail: [] };
+    st.x = data.x;
+    st.y = data.y;
+    st.trail.push({ x: data.x, y: data.y });
+    if (st.trail.length > MAX_TRAIL_POINTS) st.trail.shift();
+
+    cars.set(driver, st);
+    lastMsgAt = Date.now();
+
+    requestRender();
+  });
+
+  setInterval(() => requestRender(), 500);
+</script>
+</body>
+</html>
