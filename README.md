@@ -1,7 +1,6 @@
 F1 Telemetry IoT project
 
 ---
----
 
 Stato attuale del progetto:
 
@@ -9,31 +8,31 @@ Il progetto implementa una pipeline IoT completa per la simulazione e visualizza
 
 Attualmente sono state implementate e integrate le seguenti componenti:
 
-    -   simulazione della produzione dei dati telemetrici tramite un producer Python
-    -   trasmissione dei dati tramite protocollo MQTT
-    -   broker MQTT (Mosquitto) per la gestione del flusso publish/subscribe
-    -   ingestione e parsing dei dati con Telegraf
-    -   persistenza dei dati su InfluxDB (time-series-database)
-    -   visualizzazione real-time della posizione delle vetture su mappa tramite Web Client
+-   simulazione della produzione dei dati telemetrici tramite un producer Python
+-   trasmissione dei dati tramite protocollo MQTT
+-   broker MQTT (Mosquitto) per la gestione del flusso publish/subscribe
+-   ingestione e parsing dei dati con Telegraf
+-   persistenza dei dati su InfluxDB (time-series-database)
+-   visualizzazione real-time della posizione delle vetture su mappa tramite Web Client
 
 La parte relativa alle dashboard Grafana è in fase di reintegrazione.
 
 
----
 ---
 
 Architettura della pipeline:
 
 Producer (Python)
         ↓ MQTT
-Mosquitto (Broker) 
-        ↓        ↘
-                    Track Web Client (real-time map via WebSocket)
-    Telegraf        
+Mosquitto (Broker)
         ↓
-    InfluxDB
+Telegraf
+        ↓
+InfluxDB
 
----
+        ↘
+         Track Web Client (real-time map via WebSocket)
+
 ---
 
 Setup del sistema:
@@ -71,7 +70,6 @@ Setup del sistema:
         - gestione simultanea di più piloti (di default 2)
 
 ---
----
 
 
 Flusso dei dati:
@@ -84,7 +82,6 @@ Flusso dei dati:
 6.  Il Track Client si sottoscrive direttamente a MQTT e aggiorna la visualizzazione
 
 
----
 ---
 
 
@@ -100,7 +97,6 @@ Questo evita chiamate ripetute all'API.
 
 
 ---
----
 
 
 Limitazioni attuali:
@@ -111,7 +107,6 @@ Limitazioni attuali:
 -   le dashboard Grafana non sno ancora integrate
 
 
----
 ---
 
 
